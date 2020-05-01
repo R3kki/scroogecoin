@@ -1,3 +1,6 @@
+import java.security.PublicKey;
+import java.util.HashSet;
+
 public class TxHandler {
 
     /**
@@ -5,21 +8,46 @@ public class TxHandler {
      * {@code utxoPool}. This should make a copy of utxoPool by using the UTXOPool(UTXOPool uPool)
      * constructor.
      */
+    private final UTXOPool currentPool;
+
+    private final HashSet<Transaction.Output> currentPoolOutputs;
+
     public TxHandler(UTXOPool utxoPool) {
-        // IMPLEMENT THIS
+        currentPool = new UTXOPool(utxoPool);
+        //  stores all outputs of current UTXOPool in a hashset to be easily checked
+        currentPoolOutputs = new HashSet<>();
+        for (UTXO ut : currentPool.getAllUTXO()) {
+            currentPoolOutputs.add(currentPool.getTxOutput(ut));
+        }
     }
 
     /**
      * @return true if:
-     * (1) all outputs claimed by {@code tx} are in the current UTXO pool, 
-     * (2) the signatures on each input of {@code tx} are valid, 
+     * (1) all outputs claimed by {@code tx} are in the current UTXO pool,
+     * (2) the signatures on each input of {@code tx} are valid,
      * (3) no UTXO is claimed multiple times by {@code tx},
      * (4) all of {@code tx}s output values are non-negative, and
      * (5) the sum of {@code tx}s input values is greater than or equal to the sum of its output
-     *     values; and false otherwise.
+     * values; and false otherwise.
      */
     public boolean isValidTx(Transaction tx) {
-        // IMPLEMENT THIS
+        // (1)
+        for (Transaction.Output output : tx.getOutputs()) {
+            if (!currentPoolOutputs.contains(output)) return false;
+        }
+
+        // (2)
+        for (Transaction.Input input : tx.getInputs()) {
+            int index = input.outputIndex;
+            byte[] signature = input.signature;
+
+            Transaction.Output output = tx.getOutput(index);
+            PublicKey pubKey = output.address;
+            byte[] message = tx.getRawDataToSign(index);
+            if (!Crypto.verifySignature(pubKey, message, signature)) return false;
+        }
+
+        return true;
     }
 
     /**
