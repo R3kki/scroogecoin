@@ -1,4 +1,5 @@
 import java.security.PublicKey;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 
@@ -85,7 +86,28 @@ public class TxHandler {
      * updating the current UTXO pool as appropriate.
      */
     public Transaction[] handleTxs(Transaction[] possibleTxs) {
-        // IMPLEMENT THIS
+        ArrayList<Transaction> validTransactions = new ArrayList<>();
+
+        // validate and add keep track of accepted transactions
+        for (Transaction t : possibleTxs)
+            if (isValidTx(t)) validTransactions.add(t);
+
+        // update current UTXO pool
+        int index = 0;
+        Transaction[] acceptedTransactions = new Transaction[validTransactions.size()];
+        for (Transaction t : validTransactions) {
+            acceptedTransactions[index++] = t;
+            byte[] txHash = t.getHash();
+            // update the transaction outputs
+            int txIndex = 0;
+            for (Transaction.Output output : t.getOutputs()) {
+                UTXO ut = new UTXO(txHash, txIndex++);
+                currentPool.addUTXO(ut, output); // add to current UTXO Pool
+            }
+        }
+
+        return acceptedTransactions;
+
     }
 
 }
