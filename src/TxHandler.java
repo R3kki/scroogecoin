@@ -1,4 +1,5 @@
 import java.security.PublicKey;
+import java.util.Arrays;
 import java.util.HashSet;
 
 public class TxHandler {
@@ -56,7 +57,16 @@ public class TxHandler {
         // (5)
         double inputSum = 0, outputSum = 0;
         for (Transaction.Input input : tx.getInputs()) {
-            inputSum += tx.getOutput(input.outputIndex).value;
+            byte[] hash = input.prevTxHash;
+            int index = input.outputIndex;
+            double value = 0;
+            for (UTXO utxo : currentPool.getAllUTXO()) {
+                if (Arrays.equals(utxo.getTxHash(), hash) && utxo.getIndex() == index) {
+                    value = currentPool.getTxOutput(utxo).value;
+                    break;
+                }
+            }
+            inputSum += value;
         }
         for (Transaction.Output output : tx.getOutputs()) {
             outputSum += output.value;
