@@ -32,17 +32,19 @@ public class TxHandler {
      */
     public boolean isValidTx(Transaction tx) {
         // (1)
-        for (Transaction.Output output : tx.getOutputs()) {
+        for (Transaction.Output output : tx.getOutputs())
             if (!currentPoolOutputs.contains(output)) return false;
-        }
 
         // (2)
         for (Transaction.Input input : tx.getInputs()) {
+            // input
             int index = input.outputIndex;
             byte[] signature = input.signature;
-            Transaction.Output output = tx.getOutput(index); // corresponding output
+            Transaction.Output output = correspondingOutput(input);
+            // spent output
             PublicKey pubKey = output.address;
             byte[] message = tx.getRawDataToSign(index);
+            // verify
             if (!Crypto.verifySignature(pubKey, message, signature)) return false;
         }
         // (3)
@@ -51,28 +53,30 @@ public class TxHandler {
             currentPoolOutputs.remove(output);
         }
         // (4)
-        for (Transaction.Output output : tx.getOutputs()) {
+        for (Transaction.Output output : tx.getOutputs())
             if (output.value < 0) return false;
-        }
+
         // (5)
         double inputSum = 0, outputSum = 0;
-        for (Transaction.Input input : tx.getInputs()) {
-            byte[] hash = input.prevTxHash;
-            int index = input.outputIndex;
-            double value = 0;
-            for (UTXO utxo : currentPool.getAllUTXO()) {
-                if (Arrays.equals(utxo.getTxHash(), hash) && utxo.getIndex() == index) {
-                    value = currentPool.getTxOutput(utxo).value;
-                    break;
-                }
-            }
-            inputSum += value;
-        }
-        for (Transaction.Output output : tx.getOutputs()) {
+        for (Transaction.Input input : tx.getInputs())
+            inputSum += correspondingOutput(input).value;
+        for (Transaction.Output output : tx.getOutputs())
             outputSum += output.value;
-        }
 
         return !(inputSum < outputSum);
+    }
+
+    private Transaction.Output correspondingOutput(Transaction.Input input) {
+        Transaction.Output output = null;
+        byte[] hash = input.prevTxHash;
+        int index = input.outputIndex;
+        for (UTXO ut : currentPool.getAllUTXO()) {
+            if (Arrays.equals(ut.getTxHash(), hash) && ut.getIndex() == index) {
+                output = currentPool.getTxOutput(ut);
+                break;
+            }
+        }
+        return output;
     }
 
     /**
