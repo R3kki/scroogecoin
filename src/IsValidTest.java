@@ -1,4 +1,3 @@
-package test;// Copyright (C) 2016-2017 Enrique Albertos
 // Distributed under the GNU GPL v2 software license
 
 
@@ -9,6 +8,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 
 import org.junit.Test;
+
 /**
  * Unit tests for {@link TxHandler#isValidTx(Transaction)}
  * <p>

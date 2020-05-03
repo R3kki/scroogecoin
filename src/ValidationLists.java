@@ -1,4 +1,3 @@
-package test;// Copyright (C) 2016-2017 Enrique Albertos
 // Distributed under the GNU GPL v2 software license
 
 import java.util.ArrayList;
